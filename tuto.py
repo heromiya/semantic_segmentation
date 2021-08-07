@@ -14,16 +14,27 @@ from keras.models import Model
 from PIL import Image
 import os
 import keras
+import argparse
 
-BATCH_SIZE = 128
-CLASSES = ['foreground']
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--batch_size',type=int)
+parser.add_argument('--dropout',type=float)
+parser.add_argument('--backbone')
+parser.add_argument('--epochs',type=int)
+parser.add_argument('--target')
+parser.add_argument('--model')
+parser.add_argument('--checkpoint')
+
+args = parser.parse_args()
+
+BATCH_SIZE = args.batch_size
 LR = 0.001
-EPOCHS = 200
-DROPOUT = 0.05
-#BACKBONE='seresnext101'
-BACKBONE='resnet34'
+EPOCHS = args.epochs
+DROPOUT = args.dropout
+BACKBONE= args.backbone
 
-exp = '166'
+exp = args.target
 x_train_dir = exp + '/img'
 y_train_dir = exp + '/ann'
 
@@ -31,11 +42,22 @@ x_valid_dir = exp + '/img_sample'
 y_valid_dir = exp + '/ann_sample'
 
 
+CLASSES = ['foreground']
+
+
 import segmentation_models as sm
-model = sm.Linknet(backbone_name=BACKBONE,
-                   activation = 'hard_sigmoid',
-                   encoder_weights=None,
-                   input_shape=(None, None, 5))#,pyramid_dropout = DROPOUT)
+
+model_args = dict(backbone_name=BACKBONE,
+                  activation = 'hard_sigmoid',
+                  encoder_weights=None,
+                  input_shape=(None, None, 5))
+
+if args.model == 'Linknet':
+    model = sm.Linknet(**model_args)
+elif args.model == 'Unet':
+    model = sm.Unet(**model_args)
+elif args.model == 'FPS':
+    model = sm.FPS(**model_args,pyramid_dropout = DROPOUT)
 
 # compile keras model with defined optimozer, loss and metrics
 model.compile(keras.optimizers.Adam(LR),
@@ -44,7 +66,7 @@ model.compile(keras.optimizers.Adam(LR),
 #sm.losses.BinaryFocalLoss() +
 # define callbacks for learning rate scheduling and best checkpoints saving
 callbacks = [
-    keras.callbacks.ModelCheckpoint('Exp' + exp + '-best_model-' + BACKBONE + '-' + str(BATCH_SIZE) + '-dropout' + str(DROPOUT) + '.h5', save_weights_only=True, save_best_only=True, monitor='val_loss',mode='min'),
+    keras.callbacks.ModelCheckpoint(args.checkpoint, save_weights_only=True, save_best_only=True, monitor='val_loss',mode='min'),
     keras.callbacks.ReduceLROnPlateau(monitor='val_loss',patience=3,min_delta=0.001),
 ]
 
