@@ -28,6 +28,7 @@ parser.add_argument('--model')
 parser.add_argument('--checkpoint')
 parser.add_argument('--optimizer')
 parser.add_argument('--lr',type=float)
+parser.add_argument('--loss')
 
 args = parser.parse_args()
 
@@ -76,10 +77,22 @@ elif args.optimizer == 'SGD':
 elif args.optimizer == 'RAdam':
     optimizer = RAdam() # RAdam(learning_rate=0.001)
 
+if args.loss == 'jdf':
+    loss = sm.losses.JaccardLoss() + sm.losses.DiceLoss() + sm.losses.BinaryFocalLoss()
+elif args.loss == 'jd':
+    loss = sm.losses.JaccardLoss() + sm.losses.DiceLoss()
+elif args.loss == 'df':
+    loss = sm.losses.DiceLoss() + sm.losses.BinaryFocalLoss()
+elif args.loss == 'jf':
+    loss = sm.losses.JaccardLoss() + sm.losses.BinaryFocalLoss()
+
+    
 model.compile(optimizer,
-              sm.losses.BinaryCELoss() + sm.losses.BinaryFocalLoss() + sm.losses.DiceLoss() + sm.losses.JaccardLoss(), #class_indexes=[1]
-              [sm.metrics.IOUScore(threshold=0.5)])
-#
+              loss,
+              [sm.metrics.IOUScore(threshold=0.5),
+               sm.metrics.FScore(threshold=0.5)]
+)
+#sm.losses.BinaryCELoss() +  +
 # define callbacks for learning rate scheduling and best checkpoints saving
 callbacks = [
     keras.callbacks.ModelCheckpoint(args.checkpoint, save_weights_only=True, save_best_only=True, monitor='val_loss',mode='min'),

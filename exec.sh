@@ -1,14 +1,16 @@
 #! /bin/bash
 
 BATCH_SIZE=128
-DROPOUT=0.5
-BACKBONE=efficientnetb3
+DROPOUT=0.25
+BACKBONE=resnext101
 EPOCHS=400
 TARGET=165
 MODEL=FPN
 OPTIMIZER=RAdam
 LR=0.001
-BASENAME=$TARGET-$MODEL-$BACKBONE-$DROPOUT-$BATCH_SIZE-$OPTIMIZER-$LR
+LOSS=jd
+
+BASENAME=$TARGET-$MODEL-$BACKBONE-$DROPOUT-$BATCH_SIZE-$OPTIMIZER-$LR-$LOSS
 CHECKPOINT=checkpoints/$BASENAME.h5
 LOG=logs/$(date +%F_%T)-$BASENAME.log
 
@@ -22,4 +24,5 @@ python tuto.py --batch_size $BATCH_SIZE \
        --checkpoint $CHECKPOINT \
        --model $MODEL \
        --optimizer $OPTIMIZER \
-       --lr $LR 2>&1 | tee $LOG
+       --lr $LR \
+       --loss $LOSS 2>&1 | tee $LOG
