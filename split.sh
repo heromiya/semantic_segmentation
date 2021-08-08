@@ -1,10 +1,12 @@
 #! /bin/bash
 
-TARGET=165
-SPLIT=0.2
+TARGET=$1
+SPLIT=0.25
 N_TOTAL=$(find $TARGET/img/ -type f | wc -l)
 
 mkdir -p $TARGET/ann_sample $TARGET/img_sample
+mv $TARGET/ann_sample/* $TARGET/ann
+mv $TARGET/img_sample/* $TARGET/img
 
 N_VALIDATION=$(echo "$N_TOTAL * $SPLIT" | bc | sed 's/\.[0-9]*$//')
 
