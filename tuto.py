@@ -29,6 +29,7 @@ parser.add_argument('--checkpoint')
 parser.add_argument('--optimizer')
 parser.add_argument('--lr',type=float)
 parser.add_argument('--loss')
+parser.add_argument('--activation')
 
 args = parser.parse_args()
 
@@ -51,8 +52,11 @@ CLASSES = ['foreground']
 
 import segmentation_models as sm
 
+
+
+
 model_args = dict(backbone_name=BACKBONE,
-                  activation = 'relu',
+                  activation = args.activation,
                   encoder_weights=None,
                   input_shape=(None, None, 5))
 
