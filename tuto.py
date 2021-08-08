@@ -30,6 +30,7 @@ parser.add_argument('--optimizer')
 parser.add_argument('--lr',type=float)
 parser.add_argument('--loss')
 parser.add_argument('--activation')
+parser.add_argument('--pretrained')
 
 args = parser.parse_args()
 
@@ -51,9 +52,6 @@ CLASSES = ['foreground']
 
 
 import segmentation_models as sm
-
-
-
 
 model_args = dict(backbone_name=BACKBONE,
                   activation = args.activation,
@@ -92,14 +90,17 @@ elif args.loss == 'df':
 elif args.loss == 'jf':
     loss = sm.losses.JaccardLoss() + sm.losses.BinaryFocalLoss()
 
-    
+if args.pretrained != None:
+    model.load_weights(args.pretrained)
+
+
 model.compile(optimizer,
               loss,
               [sm.metrics.IOUScore(threshold=0.5),
                sm.metrics.FScore(threshold=0.5) ]
 )
 #sm.losses.BinaryCELoss() +  +
-# define callbacks for learning rate scheduling and best checkpoints saving
+
 callbacks = [
     keras.callbacks.ModelCheckpoint(args.checkpoint, save_weights_only=True, save_best_only=True, monitor='val_loss',mode='min'),
     #keras.callbacks.ReduceLROnPlateau(monitor='val_loss',patience=3,min_delta=0.001),
