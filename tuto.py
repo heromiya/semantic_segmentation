@@ -15,6 +15,7 @@ from PIL import Image
 import os
 import keras
 import argparse
+from keras_radam import RAdam
 
 
 parser = argparse.ArgumentParser()
@@ -25,11 +26,13 @@ parser.add_argument('--epochs',type=int)
 parser.add_argument('--target')
 parser.add_argument('--model')
 parser.add_argument('--checkpoint')
+parser.add_argument('--optimizer')
+parser.add_argument('--lr',type=float)
 
 args = parser.parse_args()
 
 BATCH_SIZE = args.batch_size
-LR = 0.001
+LR = args.lr
 EPOCHS = args.epochs
 DROPOUT = args.dropout
 BACKBONE= args.backbone
@@ -48,7 +51,7 @@ CLASSES = ['foreground']
 import segmentation_models as sm
 
 model_args = dict(backbone_name=BACKBONE,
-                  activation = 'hard_sigmoid',
+                  activation = 'relu',
                   encoder_weights=None,
                   input_shape=(None, None, 5))
 
@@ -56,18 +59,31 @@ if args.model == 'Linknet':
     model = sm.Linknet(**model_args)
 elif args.model == 'Unet':
     model = sm.Unet(**model_args)
-elif args.model == 'FPS':
-    model = sm.FPS(**model_args,pyramid_dropout = DROPOUT)
+elif args.model == 'FPN':
+    model = sm.FPN(**model_args,pyramid_dropout = DROPOUT, classes=1)
+elif args.model == 'PSPNet':
+    model = sm.PSPNet(**model_args,psp_dropout = DROPOUT, classes=1)
 
-# compile keras model with defined optimozer, loss and metrics
-model.compile(keras.optimizers.Adam(LR),
-              sm.losses.JaccardLoss(), #class_indexes=[1]
+from rectified_adam import RectifiedAdam
+from tf_rectified_adam import RectifiedAdam
+
+if args.optimizer == 'Adam':
+    optimizer = keras.optimizers.Adam(learning_rate=LR,amsgrad=True)
+if args.optimizer == 'Nadam':
+    optimizer = keras.optimizers.Nadam(LR)
+elif args.optimizer == 'SGD':
+    optimizer = keras.optimizers.SGD(LR)
+elif args.optimizer == 'RAdam':
+    optimizer = RAdam() # RAdam(learning_rate=0.001)
+
+model.compile(optimizer,
+              sm.losses.BinaryCELoss() + sm.losses.BinaryFocalLoss() + sm.losses.DiceLoss() + sm.losses.JaccardLoss(), #class_indexes=[1]
               [sm.metrics.IOUScore(threshold=0.5)])
-#sm.losses.BinaryFocalLoss() +
+#
 # define callbacks for learning rate scheduling and best checkpoints saving
 callbacks = [
     keras.callbacks.ModelCheckpoint(args.checkpoint, save_weights_only=True, save_best_only=True, monitor='val_loss',mode='min'),
-    keras.callbacks.ReduceLROnPlateau(monitor='val_loss',patience=3,min_delta=0.001),
+    #keras.callbacks.ReduceLROnPlateau(monitor='val_loss',patience=3,min_delta=0.001),
 ]
 
 # classes for data loading and preprocessing
