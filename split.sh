@@ -1,7 +1,7 @@
 #! /bin/bash
 
 TARGET=$1
-SPLIT=0.25
+SPLIT=0.27
 N_TOTAL=$(find $TARGET/img/ -type f | wc -l)
 
 mkdir -p $TARGET/ann_sample $TARGET/img_sample
