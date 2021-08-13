@@ -71,14 +71,16 @@ from rectified_adam import RectifiedAdam
 from tf_rectified_adam import RectifiedAdam
 
 if args.optimizer == 'Adam':
-    optimizer = keras.optimizers.Adam(learning_rate=LR,amsgrad=True)
+    optimizer = keras.optimizers.Adam(LR,amsgrad=True)
 if args.optimizer == 'Nadam':
     optimizer = keras.optimizers.Nadam(LR)
 elif args.optimizer == 'SGD':
     optimizer = keras.optimizers.SGD(LR)
 elif args.optimizer == 'RAdam':
-    optimizer = RAdam() # RAdam(learning_rate=0.001)
-
+    optimizer = RAdam()
+elif args.optimizer == 'RectifiedAdam':
+    optimizer = RectifiedAdam()
+    
 if args.loss == 'jdf':
     loss = sm.losses.JaccardLoss() + sm.losses.DiceLoss() + sm.losses.BinaryFocalLoss()
 elif args.loss == 'jd':
@@ -95,7 +97,7 @@ if args.pretrained != None:
 model.compile(optimizer,
               loss,
               [sm.metrics.IOUScore(threshold=0.5),
-               sm.metrics.FScore(threshold=0.5)]
+               sm.metrics.FScore(threshold=0.5) ]
 )
 #sm.losses.BinaryCELoss() +  +
 
